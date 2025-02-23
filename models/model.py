@@ -1,6 +1,13 @@
 from abc import ABC, abstractmethod
 import tensorflow as tf
 import os
+from enum import Enum
+
+class ModelVar(Enum):
+    ANNEE = "annee"
+    MOIS = "mois"
+    JOUR = "jour"
+    HEURE = "heure"
 
 class BaseModel(ABC):
 
@@ -48,3 +55,10 @@ class BaseModel(ABC):
 
     def saveOutPutModel(self):
         print("sortie Sauvegarder")
+
+    def ComputeImputShap(self, listesTypesIntrant):
+
+        nbIntran = 0
+        for TypesIntrant in listesTypesIntrant:
+            nbIntran += len(TypesIntrant)
+        return (nbIntran,)

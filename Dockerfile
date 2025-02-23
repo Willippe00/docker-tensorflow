@@ -13,14 +13,14 @@ COPY models/model.py ./models/model.py
 COPY models/W/modelW.py ./models/W/modelW.py
 
 COPY intrant/intrantMW.py ./intrant/intrantMW.py
+COPY intrant/intrantMeteo.py ./intrant/intrantMeteo.py
 
 #copier les données pour l'entrainement
-COPY data /app/data
+#COPY data /app/data
 
 RUN mkdir -p ./data/agreger
 COPY data/agreger/data.csv ./data/agreger/data.csv
-
-#COPY data/agreger/data.csv ./data/agreger/data.csv
+COPY data/agreger/meteo.csv ./data/agreger/meteo.csv
 
 
 #stocker les h5
