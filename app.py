@@ -6,6 +6,9 @@ import os
 from train import train
 from predict import predict
 
+
+from models.W.modelW import ModelW
+
 # Initialisation du parser pour lire le mode de fonctionnement
 parser = argparse.ArgumentParser(description="Script TensorFlow avec modes")
 parser.add_argument("mode", choices=["train", "predict"], help="Mode de fonctionnement : train ou predict")
@@ -18,10 +21,14 @@ model_path = os.path.join(vp_path, "model.h5")
 # Vérifier si le répertoire existe, sinon le créer
 os.makedirs(vp_path, exist_ok=True)
 
+
+
+models = [ModelW()]
+
 if args.mode == "train":
     print("debug log")
-    train(model_path)
+    train(model_path, models)
 
 elif args.mode == "predict":
-    predict(model_path)
+    predict(model_path, models)
     
