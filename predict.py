@@ -8,7 +8,7 @@ def predict(model_path, models):
     print("Mode prédiction activé")
 
     
-    sample = np.array([[7, 8]])
+    sample = np.array([[5, 15, 10]])
     
 
     for model in models:

@@ -12,8 +12,16 @@ COPY predict.py .
 COPY models/model.py ./models/model.py
 COPY models/W/modelW.py ./models/W/modelW.py
 
+COPY intrant/intrantMW.py ./intrant/intrantMW.py
+
 #copier les données pour l'entrainement
 COPY data /app/data
+
+RUN mkdir -p ./data/agreger
+COPY data/agreger/data.csv ./data/agreger/data.csv
+
+#COPY data/agreger/data.csv ./data/agreger/data.csv
+
 
 #stocker les h5
 #VOLUME ["/app/vp"]
