@@ -2,12 +2,14 @@ from abc import ABC, abstractmethod
 import tensorflow as tf
 import os
 from enum import Enum
+from datetime import datetime
 
 class ModelVar(Enum):
     ANNEE = "annee"
     MOIS = "mois"
     JOUR = "jour"
     HEURE = "heure"
+    WEEKDAY = "weekday"
 
 class BaseModel(ABC):
 
@@ -62,3 +64,42 @@ class BaseModel(ABC):
         for TypesIntrant in listesTypesIntrant:
             nbIntran += len(TypesIntrant)
         return (nbIntran,)
+    
+    def getValueImputModel(self, annee, mois, jour, heure, now = False):
+        date_actuelle = datetime.today()
+
+        intrantList = []
+        if now:
+            for intrant in self.intrantsModel:
+
+                if intrant.value == ModelVar.ANNEE.value:
+                    intrantList.append(date_actuelle.year)
+                elif  intrant.value == ModelVar.MOIS.value:
+                    intrantList.append(date_actuelle.month)
+                elif  intrant.value == ModelVar.JOUR.value:
+                    intrantList.append(date_actuelle.day)
+                elif  intrant.value == ModelVar.HEURE.value:
+                    intrantList.append(date_actuelle.hour)
+                elif intrant.value == ModelVar.WEEKDAY.value:
+                    intrantList.append(date_actuelle.isoweekday())
+                else:
+                    raise ValueError(f"Intrant inconnu : {intrant.value}. Attendu : {list(ModelVar)}")
+        else:
+            for intrant in self.intrantsModel:
+
+                if intrant.value == ModelVar.ANNEE.value:
+                    intrantList.append(annee)
+                elif  intrant.value == ModelVar.MOIS.value:
+                    intrantList.append(mois)
+                elif  intrant.value == ModelVar.JOUR.value:
+                    intrantList.append(jour)
+                elif  intrant.value == ModelVar.HEURE.value:
+                    intrantList.append(heure)
+                elif intrant.value == ModelVar.WEEKDAY.value:
+                    intrantList.append(datetime(annee, mois, jour).isoweekday())
+                else:
+                    raise ValueError(f"Intrant inconnu : {intrant.value}. Attendu : {list(ModelVar)}")
+        return intrantList
+
+
+

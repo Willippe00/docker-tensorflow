@@ -16,4 +16,4 @@ def predict(model_path, models):
         prediction = model.predict(sample)
 
         
-        print(f"Prédiction pour {sample}: {prediction}")
+        #print(f"Prédiction pour {sample}: {prediction}")

@@ -1,2 +1,9 @@
 # tensorflow
+herbie-data
 numpy
+pandas
+requests
+xarray
+matplotlib
+cfgrib
+cartopy

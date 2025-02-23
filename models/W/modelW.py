@@ -14,7 +14,7 @@ class ModelW(BaseModel):
         self.model = None
         self.epochs = 30
 
-        self.intrantsModel = [ModelVar.MOIS, ModelVar.JOUR ,ModelVar.HEURE]
+        self.intrantsModel = [ModelVar.MOIS, ModelVar.JOUR ,ModelVar.HEURE, ModelVar.WEEKDAY]
         self.intrantsMeteo = [MeteoVar.MAXTEMPDAY, MeteoVar.MINTEMPDAY]
 
 
@@ -36,9 +36,26 @@ class ModelW(BaseModel):
         self.model.fit(X_train, y_train, epochs=self.epochs, batch_size=batch_size, verbose=1)
 
     def predict(self, X_input):
+        
         """Effectue une prédiction"""
-        X_input = np.array(X_input).reshape(-1, *self.input_shape)  # Adapter la forme
-        return self.model.predict(X_input)
+        
+        X_input = []
+
+        X_row = []
+       
+        X_row.extend(self.getValueImputModel(annee=2025,mois=2,jour=23,heure=17)) # a modifer avec paramètre
+
+        intantMeteo = intrantMeteo()
+        X_row.extend(intantMeteo.getMeteoPrediction(annee=2025,mois=2,jour=23,heure=17,stations="mtl", intrants=["vide"]))
+
+        X_input.append(X_row)
+        X_input = np.array(X_input)
+
+        print(X_input)
+
+
+        prediction =  self.model.predict(X_input)
+        print(f"Prédiction pour {X_input}: {prediction}")
     
 
     def getDataEntraiment(self):
@@ -62,10 +79,11 @@ class ModelW(BaseModel):
             jour = time_obj.day
             heure = time_obj.hour
             minute = time_obj.minute
+            weekday = time_obj.isoweekday()
 
-            X_row.extend([mois, jour, heure])
+            X_row.extend([mois, jour, heure, weekday])
 
-            VarsMeteo = intantMeteo.getMeteo(annee, mois, jour , "MTL", self.intrantsMeteo)
+            VarsMeteo = intantMeteo.getMeteoEntrainement(annee, mois, jour , "MTL", self.intrantsMeteo)
             X_row.extend(VarsMeteo)
             X_train.append(X_row)
 
