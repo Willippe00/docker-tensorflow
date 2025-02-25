@@ -10,12 +10,13 @@ from intrant.intrantMeteo import intrantMeteo, MeteoVar
 class ModelW(BaseModel):
 
     def __init__(self):
+        self.nomModel = "ModelW-1"
         #super().__init__(model_path)
         self.model = None
         self.epochs = 30
 
         self.intrantsModel = [ModelVar.MOIS, ModelVar.JOUR ,ModelVar.HEURE, ModelVar.WEEKDAY]
-        self.intrantsMeteo = [MeteoVar.MAXTEMPDAY, MeteoVar.MINTEMPDAY]
+        self.intrantsMeteo = [MeteoVar.MAXTEMPDAY, MeteoVar.MINTEMPDAY, MeteoVar.MAXWINDSPEEDDAY]
 
 
         self.input_shape = self.ComputeImputShap([self.intrantsModel, self.intrantsMeteo]) #a modifier selon l'architecture
@@ -31,11 +32,11 @@ class ModelW(BaseModel):
         model.compile(optimizer="adam", loss="mse", metrics=["mae"])
         return model
 
-    def train(self, X_train, y_train, batch_size=16):
+    def train(self, X_train, y_train, batch_size=8):
         """Entraîne le modèle"""
         self.model.fit(X_train, y_train, epochs=self.epochs, batch_size=batch_size, verbose=1)
 
-    def predict(self, X_input):
+    def predict(self, annee, mois, jour, heure):
         
         """Effectue une prédiction"""
         
@@ -43,11 +44,13 @@ class ModelW(BaseModel):
 
         X_row = []
        
-        X_row.extend(self.getValueImputModel(annee=2025,mois=2,jour=23,heure=17)) # a modifer avec paramètre
+        X_row.extend(self.getValueImputModel(annee=annee,mois=mois,jour=jour,heure=heure)) # a modifer avec paramètre
 
         intantMeteo = intrantMeteo()
-        X_row.extend(intantMeteo.getMeteoPrediction(annee=2025,mois=2,jour=23,heure=17,stations="mtl", intrants=["vide"]))
+        X_row.extend(intantMeteo.getMeteoPrediction(annee=annee,mois=mois,jour=jour,heure=heure,stations="mtl", intrants=self.intrantsMeteo))
 
+        print("X_row!!")
+        print(X_row)
         X_input.append(X_row)
         X_input = np.array(X_input)
 
@@ -56,6 +59,8 @@ class ModelW(BaseModel):
 
         prediction =  self.model.predict(X_input)
         print(f"Prédiction pour {X_input}: {prediction}")
+
+        return prediction
     
 
     def getDataEntraiment(self):

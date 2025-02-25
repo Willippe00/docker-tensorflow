@@ -1,6 +1,8 @@
 # Utiliser une image officielle avec TensorFlow préinstallé
 FROM tensorflow/tensorflow:latest
-
+#FROM rorycl/tensorflow-noavx
+#latest
+#FROM python:3.9
 # Définir le répertoire de travail dans le conteneur
 WORKDIR /app
 
@@ -9,6 +11,7 @@ COPY requirements.txt .
 COPY app.py .
 COPY train.py .
 COPY predict.py .
+COPY accuracy.py .
 COPY models/model.py ./models/model.py
 COPY models/W/modelW.py ./models/W/modelW.py
 

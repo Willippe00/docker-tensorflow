@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import os
 
-def train(model_path, models):
+def trainManuel(model_path, models):
     print("Entraînement du modèle...")
 
 
@@ -11,6 +11,3 @@ def train(model_path, models):
         X_train, y_train = model.getDataEntraiment()
         model.train(X_train, y_train, batch_size=32)
         model.save_model(model_path)
-
-
-    

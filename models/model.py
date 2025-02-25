@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import tensorflow as tf
 import os
+import shutil
 from enum import Enum
 from datetime import datetime
 
@@ -14,6 +15,7 @@ class ModelVar(Enum):
 class BaseModel(ABC):
 
     def __init__(self):
+        self.nomModel = "BaseModel"
         self.model = None
         self.epochs = 10
 
@@ -29,7 +31,7 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self, X_input):
+    def predict(self, annee, mois, jour, heure):
         """Effectue une prédiction avec le modèle entraîné."""
         pass
 
@@ -39,21 +41,73 @@ class BaseModel(ABC):
         pass
 
 
-    def save_model(self, model_path):
-        """Sauvegarde le modèle en fichier .h5"""
-        if self.model is not None:
-            self.model.save(model_path)
-            print(f"Modèle sauvegardé à : {model_path}")
-        else:
-            print("Erreur : Aucun modèle à sauvegarder.")
+    def save_model(self, base_path, model_name="model.h5"):
+        """
+        Sauvegarde le modèle dans :
+        1. "data_latest/model.h5" (dernière version)
+        2. "YYYY-MM-DD_HH-MM/model.h5" (version historisée)
+        """
 
-    def load_model(self, model_path):
-        """Charge un modèle à partir d'un fichier .h5"""
-        if os.path.exists(model_path):
-            self.model = tf.keras.models.load_model(model_path, custom_objects={"mse": tf.keras.losses.MeanSquaredError()})
-            print(f"Modèle chargé depuis : {model_path}")
+        # Chemin du dossier "camion"
+        camion_path = os.path.join(base_path, self.nomModel)
+
+        # Vérifier et créer "camion" si nécessaire
+        if not os.path.exists(camion_path):
+            os.makedirs(camion_path)
+            print(f'📂 Dossier créé: {camion_path}')
         else:
-            print("Erreur : Aucun modèle trouvé à charger.")
+            print(f'✅ Dossier existe: {camion_path}')
+
+        # Chemin du dossier "data_latest"
+        data_latest_path = os.path.join(camion_path, "data_latest")
+
+        # Supprimer et recréer "data_latest"
+        if os.path.exists(data_latest_path):
+            shutil.rmtree(data_latest_path)
+            print(f'🗑️ Dossier "data_latest" supprimé.')
+
+        os.makedirs(data_latest_path)
+        print(f'📂 Dossier "data_latest" recréé.')
+
+        # Générer le dossier horodaté au même niveau que "data_latest"
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        timestamp_folder = os.path.join(camion_path, timestamp)  # 🔹 Dossier au même niveau que "data_latest"
+        os.makedirs(timestamp_folder)
+        print(f'📂 Dossier horodaté créé: {timestamp_folder}')
+
+        # Définir les chemins pour la sauvegarde
+        model_path_latest = os.path.join(data_latest_path, model_name)
+        model_path_timestamped = os.path.join(timestamp_folder, model_name)
+
+        # Sauvegarder le modèle dans "data_latest" et dans le dossier horodaté
+        self.model.save(model_path_latest, save_format="h5")
+        print(f'✅ Modèle sauvegardé dans "data_latest": {model_path_latest}')
+
+        self.model.save(model_path_timestamped, save_format="h5")
+        print(f'✅ Modèle sauvegardé dans le dossier horodaté: {model_path_timestamped}')
+
+
+    def load_model_latest(self, base_path, model_name="model.h5"):
+        """
+        Charge le dernier modèle sauvegardé dans "data_latest", en gérant les fonctions personnalisées.
+        """
+        model_path = os.path.join(base_path, self.nomModel, "data_latest", model_name)
+
+        if not os.path.exists(model_path):
+            print(f'❌ Aucun modèle trouvé dans {model_path}')
+            return None
+
+        # Charger avec `custom_objects` pour éviter l'erreur sur `mse`
+        try:
+            self.model = tf.keras.models.load_model(
+                model_path,
+                custom_objects={'mse': tf.keras.losses.MeanSquaredError()}
+            )
+            print(f'✅ Modèle chargé depuis: {model_path}')
+            return self.model
+        except Exception as e:
+            print(f'⚠️ Erreur lors du chargement du modèle: {e}')
+            return None
 
     def saveOutPutModel(self):
         print("sortie Sauvegarder")
