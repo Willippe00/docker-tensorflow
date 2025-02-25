@@ -38,61 +38,9 @@ class ModelW(BaseModel):
 
     def predict(self, annee, mois, jour, heure):
         
-        """Effectue une prédiction"""
-        
-        X_input = []
-
-        X_row = []
-       
-        X_row.extend(self.getValueImputModel(annee=annee,mois=mois,jour=jour,heure=heure)) # a modifer avec paramètre
-
-        intantMeteo = intrantMeteo()
-        X_row.extend(intantMeteo.getMeteoPrediction(annee=annee,mois=mois,jour=jour,heure=heure,stations="mtl", intrants=self.intrantsMeteo))
-
-        print("X_row!!")
-        print(X_row)
-        X_input.append(X_row)
-        X_input = np.array(X_input)
-
-        print(X_input)
-
-
-        prediction =  self.model.predict(X_input)
-        print(f"Prédiction pour {X_input}: {prediction}")
-
-        return prediction
+       return self.predictHerbie(annee, mois, jour, heure)
     
 
     def getDataEntraiment(self):
 
-        data_dict = getDonneHistoriqueOuvert()
-
-        intantMeteo = intrantMeteo()
-        
-        X_train = []
-        y_train = []
-
-
-        for key, value in data_dict.items():
-            X_row = []
-            y_train.append(value)
-
-            time_obj = datetime.strptime(key, "%Y-%m-%d %H:%M")
-
-            annee = time_obj.year
-            mois = time_obj.month
-            jour = time_obj.day
-            heure = time_obj.hour
-            minute = time_obj.minute
-            weekday = time_obj.isoweekday()
-
-            X_row.extend([mois, jour, heure, weekday])
-
-            VarsMeteo = intantMeteo.getMeteoEntrainement(annee, mois, jour , "MTL", self.intrantsMeteo)
-            X_row.extend(VarsMeteo)
-            X_train.append(X_row)
-
-        X_train = np.array(X_train)
-        y_train = np.array(y_train)
-        
-        return X_train, y_train
+        return self.getDataEntraimentHistoriqueOuvert()

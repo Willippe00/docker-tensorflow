@@ -30,13 +30,6 @@ def accuracy(model_path, models, nbStep):
 
     
 
-    annee = 2025
-    mois = 2
-    jour = 23
-    heure = 17
-
-    
-
     for model in models:
         model.load_model_latest(model_path)
 
