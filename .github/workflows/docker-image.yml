@@ -11,27 +11,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    # - name: Log in to GitHub Container Registry (if needed)
-    #   run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
-    #   if: env.USE_GHCR == 'true'
+      - name: Set environment variables
+        run: echo "IMAGE_NAME=prev-conteneur:$(date +%s)" >> $GITHUB_ENV
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Create Named Volume
+        run: docker volume create vp_data
 
-    - name: Create Named Volume
-      run: docker volume create vp_data
+      - name: Build the Docker image
+        run: docker build -t $IMAGE_NAME .
 
-    - name: Build the Docker image
-      run: |
-        TIMESTAMP=$(date +%s)
-        docker build --file Dockerfile --tag prev-conteneur:$TIMESTAMP .
+      - name: Verify Image Exists
+        run: docker images | grep prev-conteneur
 
-    - name: Run Docker Container with Named Volume
-      run: docker run --rm -v vp_data:/app/vp prev-conteneur train
+      - name: Run Docker Container with Named Volume
+        run: docker run --rm -v vp_data:/app/vp $IMAGE_NAME train
 
-    - name: Remove Named Volume
-      if: always()
-      run: docker volume rm vp_data
+      - name: Remove Named Volume
+        if: always()
+        run: docker volume rm vp_data
