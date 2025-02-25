@@ -26,8 +26,11 @@ jobs:
       - name: Verify Image Exists
         run: docker images | grep prev-conteneur
 
-      - name: Run Docker Container with Named Volume
+      - name: Rouler le conteneur en entrainement
         run: docker run --rm -v vp_data:/app/vp $IMAGE_NAME train
+
+      - name: Rouler le conteneur en prévision
+        run: docker run --rm -v vp_data:/app/vp $IMAGE_NAME predict
 
       - name: Remove Named Volume
         if: always()
