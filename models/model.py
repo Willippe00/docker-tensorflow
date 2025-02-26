@@ -260,7 +260,7 @@ class BaseModel(ABC):
 
         try:
             response = requests.get(url)
-            response.raise_for_status()  # Vérifier que la requête est réussie
+            response.raise_for_status()
             data = response.json()
         except requests.exceptions.RequestException as err:
             print(f"⚠️ Erreur API : {err}")
@@ -274,11 +274,8 @@ class BaseModel(ABC):
             annee, mois, jour, heure = date_obj.year, date_obj.month, date_obj.day, date_obj.hour
 
             prediction = self.predict(annee, mois, jour, heure)
-
-            # Récupérer la valeur réelle
             valeur_reelle = record["valeurs_demandetotal"]  # Change selon ta structure
-
-            # Stocker les valeurs
+            
             y_true.append(valeur_reelle)
             y_pred.append(prediction[0][0])
 
@@ -295,15 +292,23 @@ class BaseModel(ABC):
         print(f"RMSE : {rmse:.2f}")
         print(f"R²   : {r2:.2f}")
 
-
-
-        #timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
-        timestamp = self.get_latest_pedigree_timestamp(base_path, self.nomModel)
+        # Récupérer le timestamp du pedigree
+        pedigree_timestamp = self.get_latest_pedigree_timestamp(base_path, self.nomModel)
+        evaluation_timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        
+        # 🔹 Création du dossier de sauvegarde
         performance_folder = os.path.join(base_path, self.nomModel, "performance")
         os.makedirs(performance_folder, exist_ok=True)
 
-        performance_path = os.path.join(performance_folder, f"metrics_{timestamp}.json")
-        metrics = {"MAE": mae, "MSE": mse, "RMSE": rmse, "R2": r2}
+        # 🔹 Sauvegarde des métriques dans un fichier JSON avec le timestamp
+        performance_path = os.path.join(performance_folder, f"metrics_{evaluation_timestamp}.json")
+        metrics = {
+            "timestamp": pedigree_timestamp,
+            "MAE": mae,
+            "MSE": mse,
+            "RMSE": rmse,
+            "R2": r2
+        }
 
         with open(performance_path, "w") as f:
             json.dump(metrics, f, indent=4)
