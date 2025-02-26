@@ -5,6 +5,11 @@ import shutil
 from enum import Enum
 from datetime import datetime
 import numpy as np
+import requests
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import numpy as np
+import json
+
 
 from intrant.intrantMW import getDonneHistoriqueOuvert
 from intrant.intrantMeteo import intrantMeteo, MeteoVar
@@ -216,6 +221,69 @@ class BaseModel(ABC):
                 else:
                     raise ValueError(f"Intrant inconnu : {intrant.value}. Attendu : {list(ModelVar)}")
         return intrantList
+    
+    def evaluate_latest_model(self, base_path, nbStep):
+        """
+        Évalue le dernier modèle sur les données récentes et enregistre les métriques.
+        """
+        model = self.load_model_latest(base_path)
+        if model is None:
+            return
+        
+        url = f"https://donnees.hydroquebec.com/api/explore/v2.1/catalog/datasets/demande-electricite-quebec/records?limit={nbStep}"
+
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Vérifier que la requête est réussie
+            data = response.json()
+        except requests.exceptions.RequestException as err:
+            print(f"⚠️ Erreur API : {err}")
+            return
+        
+        records = data["results"]
+        y_true, y_pred = [], []
+
+        for record in records:
+            date_obj = datetime.fromisoformat(record["date"])
+            annee, mois, jour, heure = date_obj.year, date_obj.month, date_obj.day, date_obj.hour
+
+            prediction = self.predict(annee, mois, jour, heure)
+
+            # Récupérer la valeur réelle
+            valeur_reelle = record["valeurs_demandetotal"]  # Change selon ta structure
+
+            # Stocker les valeurs
+            y_true.append(valeur_reelle)
+            y_pred.append(prediction[0][0])
+
+        # 🔹 Calcul des métriques
+        mae = mean_absolute_error(y_true, y_pred)
+        mse = mean_squared_error(y_true, y_pred)
+        rmse = np.sqrt(mse)
+        r2 = r2_score(y_true, y_pred)
+
+        # 🔹 Affichage des résultats
+        print(f"📊 Performance du modèle ({self.nomModel}):")
+        print(f"MAE  : {mae:.2f}")
+        print(f"MSE  : {mse:.2f}")
+        print(f"RMSE : {rmse:.2f}")
+        print(f"R²   : {r2:.2f}")
+
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        performance_folder = os.path.join(base_path, self.nomModel, "performance")
+        os.makedirs(performance_folder, exist_ok=True)
+
+        performance_path = os.path.join(performance_folder, f"metrics_{timestamp}.json")
+        metrics = {"MAE": mae, "MSE": mse, "RMSE": rmse, "R2": r2}
+
+        with open(performance_path, "w") as f:
+            json.dump(metrics, f, indent=4)
+
+        print(f"✅ Métriques sauvegardées : {performance_path}")
+
+
+
+
 
 
 
