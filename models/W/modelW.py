@@ -10,10 +10,12 @@ from intrant.intrantMeteo import intrantMeteo, MeteoVar
 class ModelW(BaseModel):
 
     def __init__(self):
+        super().__init__()
+
         self.nomModel = "ModelW-1"
-        #super().__init__(model_path)
         self.model = None
-        self.epochs = 30
+        self.epochs = 20
+        self.batch_size = 16
 
         self.intrantsModel = [ModelVar.MOIS, ModelVar.JOUR ,ModelVar.HEURE, ModelVar.WEEKDAY]
         self.intrantsMeteo = [MeteoVar.MAXTEMPDAY, MeteoVar.MINTEMPDAY, MeteoVar.MAXWINDSPEEDDAY]
@@ -29,12 +31,12 @@ class ModelW(BaseModel):
             tf.keras.layers.Dense(32, activation="relu"),
             tf.keras.layers.Dense(1, activation="linear")
         ])
-        model.compile(optimizer="adam", loss="mse", metrics=["mae"])
+        model.compile(optimizer=self.optimizer, loss=self.loss, metrics=["mae"])
         return model
 
-    def train(self, X_train, y_train, batch_size=8):
+    def train(self, X_train, y_train):
         """Entraîne le modèle"""
-        self.model.fit(X_train, y_train, epochs=self.epochs, batch_size=batch_size, verbose=1)
+        self.model.fit(X_train, y_train, epochs=self.epochs, batch_size= self.batch_size, verbose=1)
 
     def predict(self, annee, mois, jour, heure):
         

@@ -9,5 +9,5 @@ def trainManuel(model_path, models):
 
     for model in models:
         X_train, y_train = model.getDataEntraiment()
-        model.train(X_train, y_train, batch_size=32)
+        model.train(X_train, y_train)
         model.save_model(model_path)

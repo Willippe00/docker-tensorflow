@@ -9,6 +9,7 @@ import requests
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import numpy as np
 import json
+import re
 
 
 from intrant.intrantMW import getDonneHistoriqueOuvert
@@ -27,6 +28,10 @@ class BaseModel(ABC):
         self.nomModel = "BaseModel"
         self.model = None
         self.epochs = 10
+        self.batch_size = 8
+
+        self.optimizer = "adam"
+        self.loss = "mse"
 
 
     @abstractmethod
@@ -35,7 +40,7 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def train(self, X_train, y_train, batch_size=32):
+    def train(self, X_train, y_train):
         """Entraîne le modèle avec les données fournies."""
         pass
 
@@ -146,12 +151,33 @@ class BaseModel(ABC):
         model_path_latest = os.path.join(data_latest_path, model_name)
         model_path_timestamped = os.path.join(timestamp_folder, model_name)
 
+
+
+
+
         # Sauvegarder le modèle dans "data_latest" et dans le dossier horodaté
         self.model.save(model_path_latest, save_format="h5")
         print(f'✅ Modèle sauvegardé dans "data_latest": {model_path_latest}')
 
         self.model.save(model_path_timestamped, save_format="h5")
         print(f'✅ Modèle sauvegardé dans le dossier horodaté: {model_path_timestamped}')
+
+        pedigree_path_latest  = os.path.join(data_latest_path, f"pedigree_{timestamp}.json")
+        pedigree_path_timestamped  = os.path.join(timestamp_folder, f"pedigree_{timestamp}.json")
+
+        pedigree = {
+            "intrantsModel": [var.value for var in self.intrantsModel],#self.intrantsModel, 
+            "intrantsMeteo": [var.value for var in self.intrantsMeteo],#self.intrantsMeteo, 
+            "epochs": self.epochs, 
+            "batch_size": self.batch_size,
+            "optimizer" : self.optimizer,
+            "loss" : self.loss}
+
+        with open(pedigree_path_latest, "w") as f:
+            json.dump(pedigree, f, indent=4)
+
+        with open(pedigree_path_timestamped, "w") as f:
+            json.dump(pedigree, f, indent=4)
 
 
     def load_model_latest(self, base_path, model_name="model.h5"):
@@ -269,7 +295,10 @@ class BaseModel(ABC):
         print(f"RMSE : {rmse:.2f}")
         print(f"R²   : {r2:.2f}")
 
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+
+
+        #timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        timestamp = self.get_latest_pedigree_timestamp(base_path, self.nomModel)
         performance_folder = os.path.join(base_path, self.nomModel, "performance")
         os.makedirs(performance_folder, exist_ok=True)
 
@@ -280,6 +309,34 @@ class BaseModel(ABC):
             json.dump(metrics, f, indent=4)
 
         print(f"✅ Métriques sauvegardées : {performance_path}")
+
+    def get_latest_pedigree_timestamp(self, base_path, model_name):
+        """
+        Récupère le timestamp depuis le nom du fichier `pedigree_YYYY-MM-DD_HH-MM.json` dans `data_latest`.
+        """
+        data_latest_path = os.path.join(base_path, model_name, "data_latest")
+
+        if not os.path.exists(data_latest_path):
+            print(f"❌ Le dossier {data_latest_path} n'existe pas.")
+            return datetime.now().strftime("%Y-%m-%d_%H-%M")  # Fallback
+
+        # 🔹 Liste les fichiers dans `data_latest/`
+        try:
+            files = os.listdir(data_latest_path)
+        except Exception as e:
+            print(f"⚠️ Erreur lors de la lecture de {data_latest_path}: {e}")
+            return datetime.now().strftime("%Y-%m-%d_%H-%M")  # Fallback
+
+        # 🔹 Filtrer les fichiers correspondant à `pedigree_YYYY-MM-DD_HH-MM.json`
+        pattern = re.compile(r"pedigree_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2})\.json")
+
+        for file in files:
+            match = pattern.match(file)
+            if match:
+                return match.group(1)  # Retourne le timestamp extrait du nom du fichier
+
+        print("❌ Aucun fichier `pedigree_YYYY-MM-DD_HH-MM.json` trouvé dans data_latest.")
+        return datetime.now().strftime("%Y-%m-%d_%H-%M")  # Fallback si rien n'est trouvé
 
 
 
