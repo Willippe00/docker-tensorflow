@@ -15,22 +15,31 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set environment variables
-        run: echo "IMAGE_NAME=prev-conteneur:$(date +%s)" >> $GITHUB_ENV
+        run: |
+          echo "IMAGE_NAME=ghcr.io/${{ github.repository }}/prev-conteneur" >> $GITHUB_ENV
+          echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
       - name: Create Named Volume
         run: docker volume create vp_data
 
       - name: Build the Docker image
-        run: docker build -t $IMAGE_NAME .
+        run: docker build -t $IMAGE_NAME:$IMAGE_TAG .
 
       - name: Verify Image Exists
         run: docker images | grep prev-conteneur
 
       - name: Rouler le conteneur en entrainement
-        run: docker run --rm -v vp_data:/app/vp $IMAGE_NAME train
+        run: docker run --rm -v vp_data:/app/vp $IMAGE_NAME:$IMAGE_TAG train
 
       - name: Rouler le conteneur en prévision
-        run: docker run --rm -v vp_data:/app/vp $IMAGE_NAME predict
+        run: docker run --rm -v vp_data:/app/vp $IMAGE_NAME:$IMAGE_TAG predict
+
+      - name: Push Docker image to GitHub Container Registry
+        run: |
+          docker push $IMAGE_NAME:$IMAGE_TAG
 
       - name: Remove Named Volume
         if: always()
