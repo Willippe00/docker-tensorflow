@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+  packages: write  # ✅ Nécessaire pour pousser vers GitHub Container Registry
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,13 +20,14 @@ jobs:
 
       - name: Set environment variables
         run: |
-            REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-            echo "IMAGE_NAME=ghcr.io/$REPO_NAME/prev-conteneur" >> $GITHUB_ENV
-            echo "IMAGE_TAG=latest" >> $GITHUB_ENV
-      
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')  # ✅ Convertir en minuscules
+          echo "IMAGE_NAME=ghcr.io/$REPO_NAME/prev-conteneur" >> $GITHUB_ENV
+          echo "IMAGE_TAG=latest" >> $GITHUB_ENV
 
       - name: Login to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+        run: |
+          echo "${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+        # ✅ Utilise GHCR_PAT si disponible, sinon GITHUB_TOKEN
 
       - name: Create Named Volume
         run: docker volume create vp_data
@@ -33,15 +38,14 @@ jobs:
       - name: Verify Image Exists
         run: docker images | grep prev-conteneur
 
-      - name: Rouler le conteneur en entrainement
+      - name: Run training in the container
         run: docker run --rm -v vp_data:/app/vp $IMAGE_NAME:$IMAGE_TAG train
 
-      - name: Rouler le conteneur en prévision
+      - name: Run prediction in the container
         run: docker run --rm -v vp_data:/app/vp $IMAGE_NAME:$IMAGE_TAG predict
 
       - name: Push Docker image to GitHub Container Registry
-        run: |
-          docker push $IMAGE_NAME:$IMAGE_TAG
+        run: docker push $IMAGE_NAME:$IMAGE_TAG
 
       - name: Remove Named Volume
         if: always()
