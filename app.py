@@ -36,6 +36,6 @@ elif args.mode == "predict":
     predictManuel(base_path, models)
 
 elif args.mode == "accuracy":
-    accuracy(base_path, models, nbStep=8)
+    accuracy(base_path, models, nbStep=2)
 
     
