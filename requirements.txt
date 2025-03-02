@@ -1,6 +1,7 @@
 # tensorflow
 #tensorflow-cpu==2.10.0
 herbie-data
+dash
 #numpy==1.21.6
 numpy
 pandas

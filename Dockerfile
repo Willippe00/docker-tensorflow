@@ -25,13 +25,15 @@ RUN mkdir -p ./data/agreger
 COPY data/agreger/data.csv ./data/agreger/data.csv
 COPY data/agreger/meteo.csv ./data/agreger/meteo.csv
 
+COPY dash_app/dash_app.py ./dash_app/dash_app.py
+
 
 #stocker les h5
 #VOLUME ["/app/vp"]
 RUN mkdir -p /app/vp
 
 # Installer les dépendances
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --ignore-installed -r requirements.txt
 
 # Définir la commande de démarrage
 ENTRYPOINT  ["python", "app.py"]
